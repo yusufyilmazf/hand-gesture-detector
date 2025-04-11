@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>El Hareketi Tanıma</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="bg-light text-dark">
+    <div class="container-fluid p-0">
+        <header class="py-3 mb-4">
+            <div class="container">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h1 class="mb-0 d-flex align-items-center">
+                        <i class="fas fa-hand-peace me-3 text-warning"></i>
+                        <span>El Hareketi Tanıma</span>
+                    </h1>
+                    <div>
+                        <button id="settingsBtn" class="btn btn-light">
+                            <i class="fas fa-cog"></i>Ayarlar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="container my-4">
+            <div class="row g-4">
+                <!-- Video Görüntüsü ve Kontroller -->
+                <div class="col-lg-8">
+                    <div class="card fade-in">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0 d-flex align-items-center text-primary">
+                                <i class="fas fa-camera me-2"></i>Kamera Görüntüsü
+                            </h5>
+                            <div id="streamStatus" class="badge bg-danger">Kapalı</div>
+                        </div>
+                        <div class="card-body p-0 position-relative">
+                            <!-- Yükleme katmanı -->
+                            <div id="loadingOverlay" class="position-absolute top-0 start-0 w-100 h-100 d-flex justify-content-end align-items-start p-3">
+                                <div class="spinner-border text-primary spinner-sm" role="status">
+                                    <span class="visually-hidden">Yükleniyor...</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Video üzerindeki yazılar ve bilgiler -->
+                            <div class="video-overlay">
+                                <div class="video-info-top">
+                                    <div class="mode-badge" id="currentModeDisplay">
+                                        <i class="fas fa-hands"></i>
+                                        <span>Çift El Modu</span>
+                                    </div>
+                                    <div class="mode-badge" id="skeletonModeDisplay">
+                                        <i class="fas fa-skeleton"></i>
+                                        <span>İskelet Açık</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="video-info-bottom">
+                                    <div class="gesture-card" id="liveGestureCard">
+                                        <i class="fas fa-hand"></i>
+                                        <span>Başparmak Yukarı</span>
+                                        <div class="confidence-badge">%90</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Kamera kapalı durumunda gösterilecek bilgi katmanı -->
+                            <div id="cameraOffInfo" class="camera-off-info position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center">
+                                <div class="camera-icon-container mb-3">
+                                    <i class="fas fa-video-slash fa-3x text-primary"></i>
+                                </div>
+                                <h3 class="camera-off-title mb-2">Kamera Kapalı</h3>
+                                <p class="camera-off-subtitle">Başlatmak için aşağıdaki "Başlat" butonuna tıklayın</p>
+                            </div>
+                            
+                            <!-- Ana video görüntüsü -->
+                            <img id="videoStream" src="{{ url_for('static', filename='img/camera-placeholder.jpg') }}" class="img-fluid w-100" alt="Kamera Görüntüsü" onload="this.dataset.loaded = 'true';">
+                        </div>
+                        <div class="card-footer">
+                            <div class="d-flex justify-content-between flex-wrap">
+                                <div class="btn-group mb-2 mb-md-0">
+                                    <button id="startBtn" class="btn btn-success">
+                                        <i class="fas fa-play"></i>Başlat
+                                    </button>
+                                    <button id="stopBtn" class="btn btn-danger" disabled>
+                                        <i class="fas fa-stop"></i>Durdur
+                                    </button>
+                                </div>
+                                <div class="btn-group">
+                                    <button id="flipBtn" class="btn btn-info">
+                                        <i class="fas fa-sync"></i>Çevir
+                                    </button>
+                                    <button id="skeletonBtn" class="btn btn-warning">
+                                        <i class="fas fa-skeleton"></i>İskelet
+                                    </button>
+                                    <button id="handsModeBtn" class="btn btn-primary">
+                                        <i class="fas fa-hands"></i>Çift El
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tanıma Bilgileri ve Geçmişi -->
+                <div class="col-lg-4">
+                    <!-- Mevcut Hareket Bilgisi -->
+                    <div class="card mb-4 fade-in" style="animation-delay: 0.1s">
+                        <div class="card-header">
+                            <h5 class="mb-0 d-flex align-items-center text-primary">
+                                <i class="fas fa-hand me-2"></i>Tanınan Hareket
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="currentGesture" class="text-center">
+                                <div class="display-4 mb-2">-</div>
+                                <div class="progress" style="height: 12px;">
+                                    <div id="confidenceBar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" style="width: 0%"></div>
+                                </div>
+                                <div id="confidenceText" class="mt-2">Güven: %0</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tanınan Hareketler Listesi -->
+                    <div class="card fade-in" style="animation-delay: 0.2s">
+                        <div class="card-header">
+                            <h5 class="mb-0 d-flex align-items-center text-primary">
+                                <i class="fas fa-history me-2"></i>Son Hareketler
+                            </h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div id="gestureHistory" class="list-group list-group-flush">
+                                <!-- Geçmiş hareketler buraya JavaScript ile eklenecek -->
+                                <div class="list-group-item text-center py-4">
+                                    <i class="fas fa-hand fa-3x mb-3 text-secondary"></i>
+                                    <p class="mb-0 text-secondary">Henüz hareket tanınmadı</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="py-3 border-top mt-5 bg-white">
+            <div class="container text-center">
+                <p class="mb-0 text-secondary">
+                    <i class="fas fa-code me-2"></i>
+                    El Hareketi Tanıma Sistemi &copy; 2024
+                </p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Ayarlar Modal -->
+    <div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title text-primary" id="settingsModalLabel">
+                        <i class="fas fa-cog me-2"></i>Ayarlar
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-4">
+                        <label for="cameraSelect" class="form-label d-flex align-items-center">
+                            <i class="fas fa-video me-2 text-primary"></i>
+                            Kamera Seçimi
+                        </label>
+                        <select class="form-select" id="cameraSelect">
+                            <option value="0">Varsayılan Kamera</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label d-flex align-items-center">
+                            <i class="fas fa-sliders-h me-2 text-info"></i>
+                            Görüntü İşleme
+                        </label>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="skeletonSwitch" checked>
+                            <label class="form-check-label" for="skeletonSwitch">El İskeleti Göster</label>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="flipSwitch" checked>
+                            <label class="form-check-label" for="flipSwitch">Görüntüyü Çevir (Ayna)</label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label d-flex align-items-center">
+                            <i class="fas fa-hand-paper me-2 text-warning"></i>
+                            Tanıma Modu
+                        </label>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="handsMode" id="singleHandMode" value="single">
+                            <label class="form-check-label" for="singleHandMode">Tek El Modu</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="handsMode" id="doubleHandMode" value="double" checked>
+                            <label class="form-check-label" for="doubleHandMode">Çift El Modu</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Kapat
+                    </button>
+                    <button type="button" class="btn btn-primary" id="saveSettingsBtn">
+                        <i class="fas fa-save me-2"></i>Kaydet
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html> 
