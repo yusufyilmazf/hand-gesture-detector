@@ -52,6 +52,8 @@ Kolay bir şekilde çalıştırmak için, dizinde bulunan başlatma betiğini ku
 # Özel parametreler ile başlatma
 ./run_demo.sh --camera 1 --resolution 1280x720
 
+# Web uygulamasını başlatma
+
 ./run_web_app.sh
 
 # manuel başlatma
