@@ -38,7 +38,7 @@ Bu proje, kamera ile gerçek zamanlı olarak el hareketlerini tanıyan basit bir
 
 ```bash
 # Gerekli Python paketlerini yükleyin
-pip install opencv-python mediapipe numpy
+pip install -r requirements.txt
 ```
 
 ### Çalıştırma
@@ -51,6 +51,11 @@ Kolay bir şekilde çalıştırmak için, dizinde bulunan başlatma betiğini ku
 
 # Özel parametreler ile başlatma
 ./run_demo.sh --camera 1 --resolution 1280x720
+
+./run_web_app.sh
+
+# manuel başlatma
+python src\web_app.py
 ```
 
 Alternatif olarak, Python betiğini doğrudan çalıştırabilirsiniz:
